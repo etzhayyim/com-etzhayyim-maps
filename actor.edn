@@ -1,0 +1,8 @@
+{:did        "did:web:etzhayyim.github.io:com-etzhayyim-maps"
+ :handle     "maps.etzhayyim.com"
+ :ipns-key   "maps-actor"
+ :graph-type "com.etzhayyim.maps.graph"
+ :published  "2026-06-28"
+ :bundle [["data" "data"]
+          [".well-known/did.json" "did.json"]
+          ["README.md" "README.md"]]}
