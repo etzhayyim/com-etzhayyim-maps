@@ -1,11 +1,7 @@
-{:paths ["src"]
- :aliases
- {:test {:extra-paths ["test"]
-         :extra-deps {io.github.cognitect-labs/test-runner
-                      {:git/tag "v0.5.1" :git/sha "dfb30dd"}}
-         :main-opts ["-m" "cognitect.test-runner"]}
-  :lint {:replace-deps {clj-kondo/clj-kondo {:mvn/version "2024.11.14"}}
-         :main-opts    ["-m" "clj-kondo.main" "--lint" "src" "test" "--fail-level" "error"]}}
+{:paths ["src" "test"]
+ :deps {org.clojure/clojure {:mvn/version "1.12.0"}
+        org.clojure/data.json {:mvn/version "2.5.1"}}
+ :aliases {:test {:main-opts ["-m" "maps.test-runner"]}}
  :project {:name "maps"
            :version "0.1.0"
            :glyph "地図"
@@ -15,23 +11,24 @@
            :description "Kotoba-native maps spatial substrate. R0 (kotoba-spatial.ts TS adapter) → R1 (Clojure method ports: analyze/ingest/chunk/search/reverse/transit/verify/datom-emit/coverage-report; RisingWave pruned from getChunk hot-path; kotoba-primary; ADR-2606064500 R1+R2). RisingWave/Hyperdrive fallback removed from the TS worker; kotoba is the only backend. G3 sourcing honesty, G4 no-server-key (member/operator-DID bearer only), G7 live push Council+operator-gated, G9 feature=placed thing never person."}
  :dependencies {}
  :substrate {:state "kotoba Datom log (ADR-2605312345)"
-             :schema "00-contracts/schemas/maps-spatial-ontology.kotoba.edn"
+             :schema "data/ontology/spatial.edn"
              :index "AVET(:feature.cell/rN, cells) hot-path; AVET(:feature/name-token, tokens) search"
              :inference "Murakumo-only (ADR-2605215000)"
-             :runtime "kotoba pywasm actor + Clojure methods (bb runner)"}
+             :runtime "Kotoba actor + Clojure methods"}
  :gates {:g3_sourcing_honesty true
          :g4_no_server_key true
          :g7_outward_gated true
          :g9_feature_not_person true}
- :cells {:analyze       "methods/analyze.cljc"
-         :ingest        "methods/ingest.cljc"
-         :chunk         "methods/chunk.cljc"
-         :search        "methods/search.cljc"
-         :reverse       "methods/reverse.cljc"
-         :transit       "methods/transit.cljc"
-         :verify        "methods/verify.cljc"
-         :datom-emit    "methods/datom_emit.cljc"
-         :coverage-report "methods/coverage_report.cljc"}
- :tests {:count 38
-         :runner "bb test:maps"
+ :cells {:analyze       "src/maps/methods/analyze.cljc"
+         :ingest        "src/maps/methods/ingest.cljc"
+         :chunk         "src/maps/methods/chunk.cljc"
+         :search        "src/maps/methods/search.cljc"
+         :reverse       "src/maps/methods/reverse.cljc"
+         :transit       "src/maps/methods/transit.cljc"
+         :verify        "src/maps/methods/verify.cljc"
+         :datom-emit    "src/maps/methods/datom_emit.cljc"
+         :coverage-report "src/maps/methods/coverage_report.cljc"
+         :onsen         "src/maps/methods/onsen.cljc"}
+ :tests {:count 62
+         :runner "bb test"
          :network false}}

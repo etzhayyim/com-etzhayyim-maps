@@ -7,16 +7,16 @@
 > **watari** (ADR-2606041827); the static-feature substrate is moving now.
 >
 > **kotoba-native surfaces (use these for new work):**
-> - Ontology: `00-contracts/schemas/maps-spatial-ontology.kotoba.edn` (`:feature/*`, the
+> - Ontology: `data/ontology/spatial.edn` (`:feature/*`, the
 >   `vertex_spatial` successor; H3-cell-as-Datom + **AVET** spatial index `:feature.cell/rN`).
-> - Methods: `20-actors/maps/methods/{ingest,analyze}.py` (legacy `vertex_spatial` export →
+> - Methods: `src/maps/methods/{ingest,analyze}.cljc` (legacy `vertex_spatial` export →
 >   `:feature/*` + H3 cells → `kg.ingest_batch`, G7-gated; Earth-coverage report). `run_tests.sh`
 >   (12 green).
 > - Adapter: `60-apps/.../maps-ui-uqpel6i6/src/kotoba-spatial.ts` (the §3 leverage point —
 >   `queryByCells` AVET read, `ingestFeatures` no-server-key write). `cmdGetChunk` is rewired
 >   **kotoba-first, fail-open** to RisingWave until R3.
 > - Lexicons: `com.etzhayyim.maps.kg.{registerFeature,queryChunk}` +
->   `00-contracts/lexicons/com/etzhayyim/maps/MIGRATION-NOTES.md` (legacy→new map).
+>   Canonical lexicons are EDN in `data/lex/`; JSON wire schemas are in `wire/lex/`.
 >
 > **Migration phases:** R0 (foundation, done) · R1 (wire `KOTOBA_ENDPOINT`, backfill, flip
 > getChunk kotoba-primary) · R2 (dumpers + 172-command tail via the adapter) · R3 (delete
