@@ -85,18 +85,18 @@
      (binding [ingest/*getenv* (fn [_] nil)]   ; MAPS_OPERATOR_GATE unset
        (is (thrown-with-msg?
             clojure.lang.ExceptionInfo #"G7"
-            (p/persist-vision! "t" [{"label" "A" "confidence" 0.9}]))))))
+            (p/persist-vision! nil "t" [{"label" "A" "confidence" 0.9}]))))))
 
 #?(:clj
    (deftest test-persist-vision-refuses-without-credentials
      (binding [ingest/*getenv* (fn [k] (when (= k "MAPS_OPERATOR_GATE") "1"))]  ; gate on, no auth/endpoint
        (is (thrown-with-msg?
             clojure.lang.ExceptionInfo #"KOTOBA_AUTH"
-            (p/persist-vision! "t" [{"label" "A" "confidence" 0.9}]))))))
+            (p/persist-vision! nil "t" [{"label" "A" "confidence" 0.9}]))))))
 
 #?(:clj
    (deftest test-persist-empty-batch-skips-push-no-gate-needed
      ;; nothing to write → no network, no gate refusal even with env unset.
      (binding [ingest/*getenv* (fn [_] nil)]
-       (is (= {:skipped :empty} (p/persist-vision! "t" [])))
-       (is (= {:skipped :empty} (p/persist-links! "t" [{"actorDid" ""}]))))))
+       (is (= {:skipped :empty} (p/persist-vision! nil "t" [])))
+       (is (= {:skipped :empty} (p/persist-links! nil "t" [{"actorDid" ""}]))))))

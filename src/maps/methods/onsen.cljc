@@ -209,7 +209,7 @@
      :feature/* and push into the kotoba Datom log. Push is G4/G7 gated:
      needs MAPS_OPERATOR_GATE=1 + KOTOBA_AUTH (member/operator bearer) + KOTOBA_ENDPOINT.
      Returns a summary map; throws ex-info on a gate/credential refusal."
-     [bbox & {:keys [endpoint] :or {endpoint default-overpass}}]
+     [bbox & {:keys [endpoint post-fn] :or {endpoint default-overpass}}]
      (let [osm   (fetch-overpass (overpass-ql bbox) endpoint)
            feats (parse-overpass osm)
            batch (ingest/to-kg-batch feats)]
@@ -223,6 +223,6 @@
          (when-not (and (seq auth) (seq ep))
            (throw (ex-info "maps G4/G7: push needs KOTOBA_AUTH + KOTOBA_ENDPOINT (no-server-key)."
                            {:exit 1})))
-         (let [[status _] (ingest/push-batch batch auth ep)]
+         (let [[status _] (ingest/push-batch post-fn batch auth ep)]
            {:bbox bbox :parsed (count feats) :pushed (count (get batch "entities"))
             :status status})))))

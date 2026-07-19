@@ -11,29 +11,23 @@
 
   GTFS departure_time may exceed 24:00:00 (past-midnight trips); text sort is correct.
 
-  query-fn: (fn [pred objects limit] → entity-seq), OR a kotoba endpoint URL string
-  (wrapped via maps.methods.search/http-avet-fn — the production HTTP AVET path).
+  query-fn: an explicitly injected (fn [pred objects limit] → entity-seq).
+  Hosted callers may build it with maps.methods.search/http-avet-fn.
   Portable .cljc."
-  (:require [clojure.string :as str]
-            [maps.methods.search :as search-ns]))
+  (:require [clojure.string :as str]))
 
 (defn- claims-map [entity]
   (reduce (fn [m c] (assoc m (get c "pred") (get c "value")))
           {}
           (get entity "claims" [])))
 
-(defn- resolve-query-fn [query-fn-or-endpoint]
-  #?(:clj (if (string? query-fn-or-endpoint)
-            (search-ns/http-avet-fn query-fn-or-endpoint)
-            query-fn-or-endpoint)
-     :cljs query-fn-or-endpoint))
-
 (defn next-departures-at-stop
   "Next scheduled departures at a stop after `after` (HH:MM:SS), earliest first.
   Returns [{:stop-time :trip :departure :arrival :headsign :sequence}]."
-  [query-fn-or-endpoint stop-id & {:keys [after limit] :or {after "00:00:00" limit 10}}]
-  (let [query-fn (resolve-query-fn query-fn-or-endpoint)
-        rows
+  [query-fn stop-id & {:keys [after limit] :or {after "00:00:00" limit 10}}]
+  (when-not (fn? query-fn)
+    (throw (ex-info "maps query capability is required" {:capability :avet-query})))
+  (let [rows
         (reduce
          (fn [acc e]
            (let [c   (claims-map e)
@@ -53,9 +47,10 @@
 (defn trips-on-route
   "All trips on a route (idx_maps_trip_route successor).
   Returns [{:trip :headsign :service :direction}]."
-  [query-fn-or-endpoint route-id & {:keys [limit] :or {limit 2000}}]
-  (let [query-fn (resolve-query-fn query-fn-or-endpoint)]
-    (reduce
+  [query-fn route-id & {:keys [limit] :or {limit 2000}}]
+  (when-not (fn? query-fn)
+    (throw (ex-info "maps query capability is required" {:capability :avet-query})))
+  (reduce
      (fn [acc e]
        (let [c (claims-map e)]
          (conj acc {:trip      (get e "id")
@@ -63,4 +58,4 @@
                     :service   (get c "transit.trip/service")
                     :direction (get c "transit.trip/direction")})))
      []
-     (query-fn "transit.trip/route" [route-id] limit))))
+     (query-fn "transit.trip/route" [route-id] limit)))

@@ -242,16 +242,16 @@
 #?(:clj
    (defn push-batch
      "POST kg.ingest_batch JSON to the kotoba endpoint. Returns [status body].
-     Uses babashka.http-client, not raw HttpURLConnection — babashka's SCI sandbox
-     disallows HttpURLConnection/setRequestMethod, which broke every real-server
-     integration test that exercised this path."
-     [batch auth endpoint]
+     `post-fn` is an explicitly granted host capability with the
+     babashka.http-client/post signature."
+     [post-fn batch auth endpoint]
+     (when-not (fn? post-fn)
+       (throw (ex-info "maps HTTP capability is required" {:capability :http-post})))
      (let [nsid "com.etzhayyim.apps.kotobase.kg.ingest_batch"
            url  (str (str/replace endpoint #"/$" "") "/xrpc/" nsid)
-           post (requiring-resolve 'babashka.http-client/post)
-           resp (post url {:headers {"content-type" "application/json"
-                                      "authorization" (str "Bearer " auth)}
-                            :body (json-encode batch)
-                            :timeout 30000
-                            :throw false})]
+           resp (post-fn url {:headers {"content-type" "application/json"
+                                        "authorization" (str "Bearer " auth)}
+                              :body (json-encode batch)
+                              :timeout 30000
+                              :throw false})]
        [(:status resp) (:body resp)])))

@@ -220,15 +220,15 @@
      :bpmn.event datoms are pushed via ingest/push-batch, behind the maps G7
      operator gate (no-server-key). Returns the final instance. Throws on a
      gate/credential refusal before any push."
-     ([inst handlers] (drive-live! inst handlers 100))
-     ([inst handlers max-steps]
+     ([post-fn inst handlers] (drive-live! post-fn inst handlers 100))
+     ([post-fn inst handlers max-steps]
       (when (not= (ingest/*getenv* "MAPS_OPERATOR_GATE") "1")
         (throw (ex-info "maps G7: live Datom-log drive is operator-gated (MAPS_OPERATOR_GATE=1)." {:exit 1})))
       (let [auth (ingest/*getenv* "KOTOBA_AUTH")
             endpoint (ingest/*getenv* "KOTOBA_ENDPOINT")]
         (when-not (and auth endpoint (seq auth) (seq endpoint))
           (throw (ex-info "maps G4/G7: live drive needs KOTOBA_AUTH + KOTOBA_ENDPOINT (no-server-key)." {:exit 1})))
-        (drive* (fn [batch] (ingest/push-batch batch auth endpoint)) inst handlers max-steps)))))
+        (drive* (fn [batch] (ingest/push-batch post-fn batch auth endpoint)) inst handlers max-steps)))))
 
 (defn replay
   "Fold the append-only :bpmn.event datoms for an instance back into its current
@@ -266,7 +266,7 @@
      "Push the instance datoms to the LIVE kotoba node via ingest/push-batch,
      behind the maps G7 operator gate (no-server-key). Returns [status body] or
      throws on a gate/credential refusal."
-     [inst]
+     [post-fn inst]
      (let [batch (instance->batch inst)]
        (when (not= (ingest/*getenv* "MAPS_OPERATOR_GATE") "1")
          (throw (ex-info (str "maps G7: live Datom-log push is Council+operator gated. "
@@ -277,4 +277,4 @@
          (when-not (and auth endpoint (seq auth) (seq endpoint))
            (throw (ex-info "maps G4/G7: push needs KOTOBA_AUTH + KOTOBA_ENDPOINT (no-server-key)."
                            {:exit 1})))
-         (ingest/push-batch batch auth endpoint)))))
+         (ingest/push-batch post-fn batch auth endpoint)))))
