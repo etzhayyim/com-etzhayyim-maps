@@ -149,7 +149,7 @@
                     (cond
                       (map? p) p
                       (string? p)
-                      (try #?(:clj ((requiring-resolve 'cheshire.core/parse-string) p)
+                      (try #?(:clj (parse-json p)
                               :cljs (js->clj (js/JSON.parse p)))
                            (catch #?(:clj Exception :cljs :default) _ {}))
                       :else {}))
@@ -170,10 +170,10 @@
                    (number? h-m)  (assoc ":feature/height-m" (double h-m))
                    (number? lvl)  (assoc ":feature/levels" (long lvl))
                    (some? geom)   (assoc ":feature/geometry"
-                                         #?(:clj ((requiring-resolve 'cheshire.core/generate-string) geom)
+                                         #?(:clj (json-encode geom)
                                             :cljs (.stringify js/JSON (clj->js geom))))
                    (seq rest-props) (assoc ":feature/props"
-                                           #?(:clj ((requiring-resolve 'cheshire.core/generate-string) rest-props)
+                                           #?(:clj (json-encode rest-props)
                                               :cljs (.stringify js/JSON (clj->js rest-props)))))]
         feat))))
 
@@ -251,7 +251,7 @@
            post (requiring-resolve 'babashka.http-client/post)
            resp (post url {:headers {"content-type" "application/json"
                                       "authorization" (str "Bearer " auth)}
-                            :body ((requiring-resolve 'cheshire.core/generate-string) batch)
+                            :body (json-encode batch)
                             :timeout 30000
                             :throw false})]
        [(:status resp) (:body resp)])))

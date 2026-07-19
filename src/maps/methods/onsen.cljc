@@ -1,6 +1,6 @@
 (ns maps.methods.onsen
   "maps — 温泉(onsen) discovery + transparent recommendation (ADR-2606064500 R2+).
-  stdlib (+ cheshire at the JSON edge only). Portable .cljc.
+  Portable .cljc with the repository's canonical JSON codec at host edges.
 
   The Google-Maps-shaped onsen finder the roster lacked: it INGESTS hot-spring
   POIs from OpenStreetMap via Overpass (open ODbL data, scope-guard compliant)
@@ -28,14 +28,14 @@
             [maps.methods.ingest :as ingest]
             [maps.methods.reverse :as rev]))
 
-;; ── JSON edge (mirror ingest.cljc's requiring-resolve pattern) ────────────────
+;; ── JSON edge (canonical ingest codec) ───────────────────────────────────────
 (defn- json-decode [s]
   (when (and (string? s) (seq s))
-    #?(:clj  ((requiring-resolve 'cheshire.core/parse-string) s)
+    #?(:clj  (ingest/parse-json s)
        :cljs (js->clj (.parse js/JSON s)))))
 
 (defn- json-encode [x]
-  #?(:clj  ((requiring-resolve 'cheshire.core/generate-string) x)
+  #?(:clj  (ingest/json-encode x)
      :cljs (.stringify js/JSON (clj->js x))))
 
 ;; ── 1. Overpass QL (pure) ─────────────────────────────────────────────────────
