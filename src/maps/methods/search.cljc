@@ -11,7 +11,8 @@
     - tests: in-memory KotobaLocal atom
 
   Portable .cljc."
-  (:require [clojure.string :as str]))
+  (:require [clojure.string :as str]
+            #?(:clj [cheshire.core :as json])))
 
 (def ^:private max-prefix 12)
 (def ^:private query-nsid "com.etzhayyim.apps.kotoba.graph.sparql")
@@ -94,8 +95,8 @@
                            :body body
                            :timeout 5000
                            :throw false})
-               parse (requiring-resolve 'cheshire.core/parse-string)]
-           (get (parse (:body resp)) "entities" []))
+               parsed (json/parse-string (:body resp))]
+           (get parsed "entities" []))
          (catch Exception _ [])))))
 
 (defn search-places

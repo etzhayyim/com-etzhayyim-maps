@@ -1,6 +1,6 @@
 {:paths ["src" "test"]
  :deps {org.clojure/clojure {:mvn/version "1.12.0"}
-        org.clojure/data.json {:mvn/version "2.5.1"}}
+        cheshire/cheshire {:mvn/version "5.13.0"}}
  :aliases {:test {:main-opts ["-m" "maps.test-runner"]}}
  :project {:name "maps"
            :version "0.1.0"

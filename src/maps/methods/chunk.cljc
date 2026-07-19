@@ -9,7 +9,8 @@
     - tests: in-memory KotobaLocal
 
   Portable .cljc."
-  (:require [clojure.string :as str]))
+  (:require [clojure.string :as str]
+            #?(:clj [cheshire.core :as json])))
 
 (def ^:private label-map
   {"Place"    ":place"   "Road"         ":road"       "Railway"     ":railway"
@@ -38,7 +39,7 @@
         owner  (first-claim claims (str "feature.cell/r" (int lod)))
         label  (first-claim claims "feature/label")
         geom   (when-let [g (first-claim claims "feature/geometry")]
-                 (try #?(:clj ((requiring-resolve 'cheshire.core/parse-string) g)
+                 (try #?(:clj (json/parse-string g)
                          :cljs (js->clj (js/JSON.parse g) :keywordize-keys false))
                       (catch #?(:clj Exception :cljs :default) _ nil)))
         geom   (or geom
