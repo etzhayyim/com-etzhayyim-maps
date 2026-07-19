@@ -80,38 +80,35 @@
 #?(:clj
    (defn http-avet-fn
      "Build a production query-fn that POSTs to the kotoba graph.sparql endpoint.
-     Uses babashka.http-client, not raw HttpURLConnection — babashka's SCI sandbox
-     disallows HttpURLConnection/setRequestMethod."
-     [endpoint]
+     `post-fn` is an explicitly granted host capability."
+     [post-fn endpoint]
+     (when-not (fn? post-fn)
+       (throw (ex-info "maps HTTP capability is required" {:capability :http-post})))
      (fn [pred objects limit]
        (try
          (let [body (str "{\"index\":\"avet\",\"predicate\":\""
                          pred "\",\"objects\":"
                          (str "[" (str/join "," (map (fn [o] (str "\"" o "\"")) objects)) "]")
                          ",\"limit\":" limit "}")
-               post (requiring-resolve 'babashka.http-client/post)
-               resp (post (str (str/replace endpoint #"/$" "") "/xrpc/" query-nsid)
-                          {:headers {"content-type" "application/json"}
-                           :body body
-                           :timeout 5000
-                           :throw false})
+               resp (post-fn (str (str/replace endpoint #"/$" "") "/xrpc/" query-nsid)
+                             {:headers {"content-type" "application/json"}
+                              :body body
+                              :timeout 5000
+                              :throw false})
                parsed (json/parse-string (:body resp))]
            (get parsed "entities" []))
          (catch Exception _ [])))))
 
 (defn search-places
   "Name search ranked by query-token overlap.
-  query-fn-or-endpoint: an injectable (fn [pred objects limit] → [{\"id\" id \"claims\" [...]}])
-  for direct/test use, OR a kotoba endpoint URL string — wrapped via http-avet-fn (the
-  production HTTP AVET path).
+  query-fn is an explicitly injected (fn [pred objects limit] → entity-seq).
+  Hosted callers build one with (http-avet-fn post-fn endpoint).
   labels: optional collection of kebab keyword strings to restrict results.
   Returns [{:id :name :label :score}], best first."
-  [query-fn-or-endpoint query & {:keys [labels limit] :or {limit 20}}]
-  (let [query-fn #?(:clj (if (string? query-fn-or-endpoint)
-                           (http-avet-fn query-fn-or-endpoint)
-                           query-fn-or-endpoint)
-                     :cljs query-fn-or-endpoint)
-        qt (query-tokens query)]
+  [query-fn query & {:keys [labels limit] :or {limit 20}}]
+  (when-not (fn? query-fn)
+    (throw (ex-info "maps query capability is required" {:capability :avet-query})))
+  (let [qt (query-tokens query)]
     (when (seq qt)
       (let [want (when labels
                    (set (map #(if (str/starts-with? (str %) ":") (str %) (str ":" %)) labels)))

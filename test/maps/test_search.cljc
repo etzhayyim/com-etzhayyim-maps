@@ -106,5 +106,12 @@
     (is (sequential? results))))
 
 #?(:clj
+   (deftest test-http-query-requires-explicit-capability
+     (is (thrown-with-msg? clojure.lang.ExceptionInfo #"HTTP capability"
+                           (search-ns/http-avet-fn nil "http://localhost")))
+     (is (thrown-with-msg? clojure.lang.ExceptionInfo #"query capability"
+                           (search-ns/search-places "http://localhost" "tok")))))
+
+#?(:clj
    (when (= *ns* (find-ns 'maps.tests.test-search))
      (run-tests)))

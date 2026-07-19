@@ -118,6 +118,11 @@
                [code (parse-json (read-n in cl))]))
            (finally (.close sock)))))
      (defn- post [url body token] (request "POST" url body token))
+     (defn- post-capability [url opts]
+       (let [authorization (get-in opts [:headers "authorization"])
+             bearer (when authorization (str/replace authorization #"^Bearer " ""))
+             [status body] (request "POST" url (parse-json (:body opts)) bearer)]
+         {:status status :body (json-encode body)}))
      (defn- get* [url] (request "GET" url nil nil))))
 
 #?(:clj (def ^:private server (atom nil)))
@@ -132,7 +137,7 @@
        ;; Seed the store in the fixture so the read tests do not depend on inter-test ordering
        ;; (clojure.test does not guarantee the Python test_1/test_2/... name order). test-2 below
        ;; still exercises the real push path independently.
-       (ingest/push-batch (batch) token @base)
+       (ingest/push-batch post-capability (batch) token @base)
        (try (f) (finally (kls/shutdown srv))))))
 
 #?(:clj (use-fixtures :once with-server))
@@ -144,7 +149,7 @@
 
 (deftest test-2-ingest-via-real-ingest-push-path
   #?(:clj
-     (let [[status body] (ingest/push-batch (batch) token @base)
+     (let [[status body] (ingest/push-batch post-capability (batch) token @base)
            parsed (parse-json body)]
        (is (= status 200))
        (is (= (get parsed "ok") true))

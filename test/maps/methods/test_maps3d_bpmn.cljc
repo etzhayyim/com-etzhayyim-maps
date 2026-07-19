@@ -73,17 +73,17 @@
 (deftest test-drive-live-refuses-without-gate
   (binding [ingest/*getenv* (fn [_] nil)]
     (is (thrown-with-msg? clojure.lang.ExceptionInfo #"G7"
-          (b/drive-live! (b/start-instance "t" "r") {})))))
+          (b/drive-live! nil (b/start-instance "t" "r") {})))))
 
 (deftest test-drive-live-refuses-without-credentials
   (binding [ingest/*getenv* (fn [k] (when (= k "MAPS_OPERATOR_GATE") "1"))]
     (is (thrown-with-msg? clojure.lang.ExceptionInfo #"KOTOBA_AUTH"
-          (b/drive-live! (b/start-instance "t" "r") {})))))
+          (b/drive-live! nil (b/start-instance "t" "r") {})))))
 
 (deftest test-push-instance-refuses-without-gate
   (binding [ingest/*getenv* (fn [_] nil)]
     (is (thrown-with-msg? clojure.lang.ExceptionInfo #"G7"
-          (b/push-instance! (b/start-instance "t" "r"))))))
+          (b/push-instance! nil (b/start-instance "t" "r"))))))
 
 ;; ── drive-live! / push-instance! success push paths (gate satisfied, no net) ──
 
@@ -102,23 +102,27 @@
 (deftest test-drive-live-pushes-each-transition
   (let [pushes (atom [])]
     (binding [ingest/*getenv* gate-ok]
-      (with-redefs [ingest/push-batch (fn [batch _auth _endpoint] (swap! pushes conj batch) [200 "ok"])]
-        (let [final (b/drive-live! (b/start-instance "t-live" "r") happy-handlers)]
+      (let [post-fn (fn [_url opts]
+                      (swap! pushes conj (ingest/parse-json (:body opts)))
+                      {:status 200 :body "ok"})
+            final (b/drive-live! post-fn (b/start-instance "t-live" "r") happy-handlers)]
           (is (= :done (:status final)))
           ;; one push per transition = history length minus the initial :start token
           (is (= (dec (count (:history final))) (count @pushes)))
           (is (pos? (count @pushes)))
           ;; every pushed batch is a bpmn-event datom batch
-          (is (every? #(= "bpmn-event" (get-in % ["entities" 0 "type"])) @pushes)))))))
+          (is (every? #(= "bpmn-event" (get-in % ["entities" 0 "type"])) @pushes))))))
 
 (deftest test-push-instance-success-pushes-snapshot
   (let [pushes (atom [])]
     (binding [ingest/*getenv* gate-ok]
-      (with-redefs [ingest/push-batch (fn [batch _auth _endpoint] (swap! pushes conj batch) [200 "ok"])]
-        (let [r (b/push-instance! (assoc (b/start-instance "t-snap" "r") :token :colmap))]
+      (let [post-fn (fn [_url opts]
+                      (swap! pushes conj (ingest/parse-json (:body opts)))
+                      {:status 200 :body "ok"})
+            r (b/push-instance! post-fn (assoc (b/start-instance "t-snap" "r") :token :colmap))]
           (is (= [200 "ok"] r))
           (is (= 1 (count @pushes)))
-          (is (= "bpmn-instance" (get-in (first @pushes) ["entities" 0 "type"]))))))))
+          (is (= "bpmn-instance" (get-in (first @pushes) ["entities" 0 "type"])))))))
 
 ;; ── full runs through each terminal ──────────────────────────────────────────
 

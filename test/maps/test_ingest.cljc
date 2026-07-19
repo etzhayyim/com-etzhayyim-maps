@@ -61,5 +61,10 @@
       (is (some? (get c "value"))))))
 
 #?(:clj
+   (deftest test-push-requires-explicit-http-capability
+     (is (thrown-with-msg? clojure.lang.ExceptionInfo #"HTTP capability"
+                           (ingest/push-batch nil {"entities" []} "token" "http://localhost")))))
+
+#?(:clj
    (when (= *ns* (find-ns 'maps.tests.test-ingest))
      (run-tests)))

@@ -107,7 +107,7 @@
      operator gate (mirrors ingest/main's --push refusal paths). Returns
      [status body] on success, or {:skipped :empty} when the batch has no
      entities. Throws ex-info on a gate/credential refusal."
-     [batch]
+     [post-fn batch]
      (if (empty? (get batch "entities"))
        {:skipped :empty}
        (do
@@ -121,16 +121,16 @@
              (throw (ex-info (str "maps G4/G7: push needs KOTOBA_AUTH (member/operator DID bearer) + "
                                   "KOTOBA_ENDPOINT. The maps Worker holds no server key (no-server-key).")
                              {:exit 1})))
-           (ingest/push-batch batch auth endpoint))))))
+           (ingest/push-batch post-fn batch auth endpoint))))))
 
 #?(:clj
    (defn persist-vision!
      "Land vision detections for a tile in the kotoba Datom log (operator-gated)."
-     [tile-h3 detections]
-     (push-gated! (vision-results->batch tile-h3 detections))))
+     [post-fn tile-h3 detections]
+     (push-gated! post-fn (vision-results->batch tile-h3 detections))))
 
 #?(:clj
    (defn persist-links!
      "Land resolved actor links for a tile in the kotoba Datom log (operator-gated)."
-     [tile-h3 links]
-     (push-gated! (actor-links->batch tile-h3 links))))
+     [post-fn tile-h3 links]
+     (push-gated! post-fn (actor-links->batch tile-h3 links))))
